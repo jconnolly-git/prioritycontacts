@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>London Priority Contacts — Anomaly</title>
+<style>
+:root, :root[data-theme="dark"] {
+  --bg:#141414; --panel:#181818; --card:#1D1D1D; --tile:#1B1B1B; --ghost:#191919;
+  --hover:#242424; --hover-strong:#2E2E2E; --hover-faint:rgba(255,255,255,0.04);
+  --line:rgba(255,255,255,0.08); --line-strong:rgba(255,255,255,0.14); --line-faint:rgba(255,255,255,0.05);
+  --line-bright:rgba(255,255,255,0.25); --line-focus:rgba(255,255,255,0.3); --line-armed:rgba(255,255,255,0.4);
+  --text:#F4F4F4; --text-2:#C7C7C7; --text-muted:#9A9A9A; --text-subtle:#6E6E6E;
+  --red:#B5342E; --white:#FFFFFF; --initial-ink:rgba(255,255,255,0.07);
+  /* colour deviation — restrained accent set */
+  --a-current:#5AA46A; --a-other:#5B84C4; --a-consultant:#C79A4F; --a-press:#A46FC4;
+  --a-agency:#4FA3A0; --a-misc:#9C8370;
+  --a-cannes:#C79A3E; --a-news:#4F94C4;
+  --a-current-bg:rgba(90,164,106,0.12); --a-other-bg:rgba(91,132,196,0.12);
+  --a-consultant-bg:rgba(199,154,79,0.12); --a-press-bg:rgba(164,111,196,0.12);
+  --a-agency-bg:rgba(79,163,160,0.12); --a-misc-bg:rgba(156,131,112,0.12);
+  --chip-scrim:rgba(20,20,20,0.85); --media-scrim:rgba(16,16,16,0.95); --modal-scrim:rgba(0,0,0,0.6);
+  --r-card:12px; --r-small:8px; --r-today:4px; --r-app:10px;
+  --shadow:0 12px 32px rgba(0,0,0,0.45); --ease:150ms ease;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+}
+:root[data-theme="light"] {
+  --bg:#F2F2F2; --panel:#F7F7F7; --card:#FFFFFF; --tile:#FAFAFA; --ghost:#EDEDED;
+  --hover:#E9E9E9; --hover-strong:#DFDFDF; --hover-faint:rgba(0,0,0,0.03);
+  --line:rgba(0,0,0,0.08); --line-strong:rgba(0,0,0,0.14); --line-faint:rgba(0,0,0,0.05);
+  --line-bright:rgba(0,0,0,0.25); --line-focus:rgba(0,0,0,0.3); --line-armed:rgba(0,0,0,0.4);
+  --text:#161616; --text-2:#4E4E4E; --text-muted:#757575; --text-subtle:#9C9C9C;
+  --red:#B5342E; --initial-ink:rgba(0,0,0,0.08);
+  --a-current:#3E7A50; --a-other:#3E63A8; --a-consultant:#9A7433; --a-press:#7E4CA8;
+  --a-agency:#2F7D7A; --a-misc:#7A6450;
+  --a-cannes:#8A6A22; --a-news:#356E9E;
+  --a-current-bg:rgba(62,122,80,0.10); --a-other-bg:rgba(62,99,168,0.10);
+  --a-consultant-bg:rgba(154,116,51,0.10); --a-press-bg:rgba(126,76,168,0.10);
+  --a-agency-bg:rgba(47,125,122,0.10); --a-misc-bg:rgba(122,100,80,0.10);
+  --chip-scrim:rgba(255,255,255,0.85); --media-scrim:rgba(250,250,250,0.95);
+  --modal-scrim:rgba(20,20,20,0.35); --shadow:0 12px 32px rgba(0,0,0,0.12);
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:var(--font); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+a { color:inherit; text-decoration:none; }
+.kicker { font-size:11px; letter-spacing:0.2em; text-transform:uppercase; color:var(--text-muted); }
+.wrap { max-width:1200px; margin:0 auto; padding:32px 56px 90px 24px; }
+
+/* Header */
+header { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; padding-bottom:24px; border-bottom:1px solid var(--line); margin-bottom:22px; }
+.head-l .kicker { margin-bottom:8px; }
+.head-l h1 { font-size:26px; font-weight:700; letter-spacing:-0.01em; }
+.head-l .sub { color:var(--text-muted); font-size:13px; margin-top:6px; max-width:560px; }
+.head-r { display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
+.live { display:inline-flex; align-items:center; gap:7px; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-2); }
+.live .dot { width:7px; height:7px; border-radius:50%; background:var(--red); animation:pulse 2.4s infinite; }
+@keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(181,52,46,0.45);} 70%{box-shadow:0 0 0 6px rgba(181,52,46,0);} 100%{box-shadow:0 0 0 0 rgba(181,52,46,0);} }
+.updated { font-size:11px; color:var(--text-subtle); }
+.theme-btn { background:var(--tile); border:1px solid var(--line); color:var(--text-2); border-radius:var(--r-small); padding:6px 12px; font-size:12px; cursor:pointer; transition:background var(--ease); font-family:inherit; }
+.theme-btn:hover { background:var(--hover); }
+
+/* Controls */
+.controls { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:24px; }
+.search { flex:1; min-width:220px; position:relative; }
+.search input { width:100%; background:var(--tile); border:1px solid var(--line); color:var(--text); border-radius:var(--r-small); padding:10px 14px 10px 36px; font-size:13px; font-family:inherit; transition:border-color var(--ease); }
+.search input:focus { outline:none; border-color:var(--line-focus); }
+.search input::placeholder { color:var(--text-subtle); }
+.search svg { position:absolute; left:12px; top:50%; transform:translateY(-50%); width:15px; height:15px; stroke:var(--text-subtle); }
+.tabs { display:flex; gap:4px; background:var(--tile); border:1px solid var(--line); border-radius:var(--r-small); padding:3px; flex-wrap:wrap; }
+.tab { background:transparent; border:none; color:var(--text-muted); padding:7px 13px; border-radius:6px; font-size:12px; cursor:pointer; font-family:inherit; transition:all var(--ease); white-space:nowrap; display:inline-flex; align-items:center; gap:6px; }
+.tab:hover { color:var(--text-2); }
+.tab.active { background:var(--hover-strong); color:var(--text); }
+.tab .tdot { width:6px; height:6px; border-radius:50%; }
+.tab .n { color:var(--text-subtle); font-variant-numeric:tabular-nums; }
+
+/* Section */
+.section { margin-bottom:32px; scroll-margin-top:20px; }
+.section-head { display:flex; align-items:center; gap:9px; margin-bottom:14px; }
+.section-head .sq { width:9px; height:9px; border-radius:2px; }
+.section-head .kicker { font-size:11px; }
+.section-head .count { font-size:11px; color:var(--text-subtle); font-variant-numeric:tabular-nums; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:14px; }
+
+/* Card — compact */
+.card { background:var(--card); border:1px solid var(--line); border-left:2px solid var(--accent,var(--line)); border-radius:var(--r-card); padding:16px 16px 14px; position:relative; transition:border-color var(--ease), background var(--ease); }
+.card:hover { background:var(--hover-faint); border-color:var(--line-strong); }
+.card-top { display:flex; gap:13px; align-items:flex-start; }
+.avatar { width:52px; height:52px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:600; color:var(--initial-ink); position:relative; overflow:hidden; }
+.avatar img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:2; }
+.avatar span { position:relative; z-index:1; }
+.card-id { flex:1; min-width:0; padding-right:84px; }
+.card-id .name { font-size:15.5px; font-weight:700; letter-spacing:-0.01em; line-height:1.25; }
+.card-id .title { font-size:12px; color:var(--text-2); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.card-id .company { font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted); margin-top:5px; }
+.card-id .loc { display:flex; align-items:center; gap:4px; font-size:10.5px; color:var(--text-subtle); margin-top:4px; }
+.card-id .loc svg { width:11px; height:11px; stroke:var(--text-subtle); fill:none; stroke-width:1.8; flex-shrink:0; }
+.add-btn { position:absolute; top:12px; right:12px; height:24px; border-radius:20px; background:var(--tile); border:1px solid var(--line); color:var(--text-muted); font-size:11px; font-weight:500; line-height:1; display:inline-flex; align-items:center; gap:4px; cursor:pointer; transition:all var(--ease); font-family:inherit; padding:0 10px; z-index:5; }
+.add-btn .plus { font-size:14px; line-height:1; }
+.add-btn:hover { background:var(--a-current); color:#fff; border-color:var(--a-current); }
+
+.dots { display:flex; flex-wrap:wrap; gap:5px; margin-top:11px; min-height:6px; }
+.pill { font-size:10px; padding:2px 7px; border-radius:20px; border:1px solid var(--line); color:var(--text-muted); display:inline-flex; align-items:center; gap:4px; line-height:1.4; }
+.pill .mk { width:5px; height:5px; border-radius:50%; }
+.pill.current { color:var(--a-current); border-color:var(--a-current); background:var(--a-current-bg); }
+.pill.current .mk { background:var(--a-current); }
+.pill.cannes { color:var(--a-cannes); border-color:color-mix(in srgb,var(--a-cannes) 45%,transparent); }
+.pill.cannes .mk { background:var(--a-cannes); }
+.pill.news { color:var(--a-news); border-color:color-mix(in srgb,var(--a-news) 45%,transparent); }
+.pill.news .mk { background:var(--a-news); }
+.pill.note-i { color:var(--text-muted); }
+.pill.note-i svg.tick { width:9px; height:9px; stroke:var(--text-subtle); fill:none; stroke-width:3; flex-shrink:0; }
+.pill.flag { color:var(--a-consultant); border-color:color-mix(in srgb,var(--a-consultant) 45%,transparent); background:var(--a-consultant-bg); }
+.pill.flag .mk { background:var(--a-consultant); }
+
+/* Card footer */
+.foot { display:flex; align-items:center; gap:6px; margin-top:12px; padding-top:10px; border-top:1px solid var(--line-faint); }
+.iconbtn { width:26px; height:26px; border-radius:6px; background:var(--tile); border:1px solid var(--line); color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all var(--ease); padding:0; }
+.iconbtn:hover { background:var(--hover-strong); color:var(--text); border-color:var(--line-strong); }
+.iconbtn svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:1.8; }
+.iconbtn.li svg { width:15px; height:15px; fill:currentColor; stroke:none; }
+.iconbtn.li { color:#0A66C2; }
+.iconbtn.li:hover { color:#fff; background:#0A66C2; border-color:#0A66C2; }
+.owner-chip { font-size:10.5px; color:var(--text-muted); margin-left:auto; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px; }
+.more-wrap { position:relative; }
+.more-btn { font-size:11px; background:transparent; border:1px solid var(--line); color:var(--text-muted); border-radius:6px; padding:4px 10px; cursor:pointer; font-family:inherit; transition:all var(--ease); }
+.more-btn:hover { background:var(--hover); color:var(--text-2); border-color:var(--line-strong); }
+
+/* Detail popover */
+.detail { position:absolute; z-index:30; top:calc(100% + 8px); right:0; width:300px; max-height:min(70vh,480px); overflow-y:auto; background:var(--panel); border:1px solid var(--line-strong); border-radius:var(--r-card); box-shadow:var(--shadow); padding:16px; display:none; }
+.more-wrap.hover-show .detail, .more-wrap.pinned .detail { display:block; }
+.detail .dh { font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-subtle); margin-bottom:4px; }
+.detail .dtitle { font-size:12.5px; color:var(--text); font-weight:600; line-height:1.35; }
+.detail .drow { display:flex; gap:8px; align-items:center; font-size:12px; color:var(--text-2); margin-top:9px; min-width:0; }
+.detail .drow svg { width:13px; height:13px; stroke:var(--text-subtle); fill:none; stroke-width:1.8; flex-shrink:0; }
+.detail .drow.li svg { fill:#0A66C2; stroke:none; }
+.detail .drow a, .detail .drow button.linkish { color:var(--text-2); border:none; background:none; padding:0; font-family:inherit; font-size:12px; cursor:pointer; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; border-bottom:1px solid transparent; }
+.detail .drow a:hover, .detail .drow button.linkish:hover { color:var(--text); border-color:var(--line-bright); }
+.detail .dnote { margin-top:12px; padding:10px 11px; background:var(--ghost); border:1px solid var(--line-faint); border-radius:var(--r-small); font-size:12px; color:var(--text-2); line-height:1.5; }
+.detail .dnote .dh { margin-bottom:5px; }
+.tag { color:var(--a-current); font-weight:600; }
+
+/* A-Z rail */
+.azrail { position:fixed; right:12px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:2px; z-index:20; padding:9px 5px; background:var(--panel); border:1px solid var(--line); border-radius:24px; box-shadow:var(--shadow); }
+.azrail button { width:24px; height:20px; font-size:11.5px; font-weight:500; color:var(--text-subtle); background:none; border:none; cursor:pointer; font-family:inherit; border-radius:5px; padding:0; transition:all var(--ease); }
+.azrail button:not(:disabled):hover { background:var(--hover-strong); color:var(--text); }
+.azrail button:disabled { opacity:0.22; cursor:default; }
+
+.empty { text-align:center; padding:60px 20px; color:var(--text-subtle); font-size:13px; }
+
+/* Modal */
+.modal-scrim { position:fixed; inset:0; background:var(--modal-scrim); display:none; align-items:center; justify-content:center; z-index:50; padding:24px; }
+.modal-scrim.open { display:flex; }
+.modal { background:var(--panel); border:1px solid var(--line-strong); border-radius:var(--r-card); box-shadow:var(--shadow); width:100%; max-width:480px; padding:24px; max-height:90vh; overflow:auto; }
+.modal .kicker { margin-bottom:8px; }
+.modal h3 { font-size:18px; font-weight:700; letter-spacing:-0.01em; }
+.modal .who { font-size:12.5px; color:var(--text-muted); margin-top:4px; }
+.field-label { font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-subtle); margin:16px 0 7px; display:block; }
+.type-row { display:flex; flex-wrap:wrap; gap:6px; }
+.type-btn { font-size:11px; padding:5px 11px; border-radius:20px; border:1px solid var(--line); background:var(--tile); color:var(--text-muted); cursor:pointer; font-family:inherit; transition:all var(--ease); }
+.type-btn:hover { color:var(--text-2); }
+.type-btn.sel { background:var(--a-current); color:#fff; border-color:var(--a-current); }
+.modal textarea { width:100%; min-height:96px; background:var(--tile); border:1px solid var(--line); color:var(--text); border-radius:var(--r-small); padding:12px; font-size:13px; font-family:inherit; resize:vertical; line-height:1.5; }
+.modal textarea:focus, .modal input:focus { outline:none; border-color:var(--line-focus); }
+.modal input.hashin { width:100%; background:var(--tile); border:1px solid var(--line); color:var(--text); border-radius:var(--r-small); padding:9px 12px; font-size:13px; font-family:inherit; }
+.preview { margin-top:16px; padding:12px; background:var(--ghost); border:1px solid var(--line-faint); border-radius:var(--r-small); }
+.preview .dh { font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-subtle); margin-bottom:6px; }
+.preview code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; color:var(--text); word-break:break-word; display:block; line-height:1.5; }
+.hint { font-size:11px; color:var(--text-subtle); margin-top:10px; line-height:1.5; }
+.modal-actions { display:flex; gap:10px; margin-top:18px; justify-content:flex-end; }
+.btn { border-radius:var(--r-small); padding:9px 16px; font-size:13px; cursor:pointer; font-family:inherit; border:1px solid var(--line); transition:all var(--ease); }
+.btn-ghost { background:transparent; color:var(--text-muted); }
+.btn-ghost:hover { background:var(--hover); color:var(--text-2); }
+.btn-copy { background:var(--tile); color:var(--text-2); }
+.btn-copy:hover { background:var(--hover); color:var(--text); }
+.btn-primary { background:var(--text); color:var(--bg); border-color:var(--text); font-weight:600; }
+.btn-primary:hover { background:var(--white); }
+.toast { position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--panel); border:1px solid var(--line-strong); color:var(--text); padding:11px 18px; border-radius:var(--r-small); font-size:13px; box-shadow:var(--shadow); opacity:0; pointer-events:none; transition:all 220ms ease; z-index:60; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+@media (max-width:640px){ .wrap{padding:24px 16px 80px;} .grid{grid-template-columns:1fr;} header{flex-direction:column;} .head-r{align-items:flex-start;} .azrail{display:none;} .detail{right:auto; left:0; width:min(300px,80vw);} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="head-l">
+      <div class="kicker">Anomaly · Growth</div>
+      <h1>London Priority Contacts</h1>
+      <div class="sub">Priority relationships for CEO &amp; Global CEO review — current clients, other clients &amp; prospects, consultants and press. Sourced from the Anomaly London CRM.</div>
+    </div>
+    <div class="head-r">
+      <span class="live"><span class="dot"></span> Live</span>
+      <span class="updated" id="updated"></span>
+      <button class="theme-btn" id="themeBtn">Light mode</button>
+    </div>
+  </header>
+
+  <div class="controls">
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+      <input type="text" id="search" placeholder="Search name, company, title, owner…">
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <button class="theme-btn" id="addContactBtn">+ Add contact</button>
+  </div>
+
+  <div id="board"></div>
+  <div class="empty" id="empty" style="display:none">No contacts match your search.</div>
+</div>
+
+<div class="azrail" id="azrail"></div>
+
+<div class="modal-scrim" id="modalScrim">
+  <div class="modal">
+    <div class="kicker">Add a note</div>
+    <h3 id="mName">—</h3>
+    <div class="who" id="mWho"></div>
+
+    <span class="field-label">The note (write it however you like)</span>
+    <textarea id="mText" placeholder="e.g. Sat next to her at the Forbes dinner, keen to talk about the new brand platform. Follow up in Sept."></textarea>
+
+    <span class="field-label">Hashtag (optional)</span>
+    <input class="hashin" id="mHash" placeholder="#WarmLead" list="hashlist">
+    <datalist id="hashlist">
+      <option value="#WarmLead"><option value="#Prospect"><option value="#FollowUp"><option value="#Intro"><option value="#Event"><option value="#Press"><option value="#Pitch">
+    </datalist>
+
+    <div class="preview">
+      <div class="dh">Suggested CRM entry — James will review before adding</div>
+      <code id="mPreview">—</code>
+    </div>
+    <div class="hint">Sends to James (jconnolly@anomaly.com) with both your original note and this formatted version, plus the CRM record ID. Nothing writes to the CRM automatically.</div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="mCancel">Cancel</button>
+      <button class="btn btn-copy" id="mCopy">Copy</button>
+      <button class="btn btn-primary" id="mSend">Send to James</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-scrim" id="addContactScrim">
+  <div class="modal">
+    <div class="kicker">Suggest a new contact</div>
+    <h3>Add to the CRM</h3>
+    <div class="who">Send details to James for review — nothing is added to the CRM automatically.</div>
+
+    <span class="field-label">First name *</span>
+    <input class="hashin" id="acFirst" placeholder="Jane">
+    <span class="field-label">Last name *</span>
+    <input class="hashin" id="acLast" placeholder="Doe">
+    <span class="field-label">Job title *</span>
+    <input class="hashin" id="acTitle" placeholder="Chief Marketing Officer">
+    <span class="field-label">Company *</span>
+    <input class="hashin" id="acCompany" placeholder="Acme Inc">
+    <span class="field-label">Email *</span>
+    <input class="hashin" id="acEmail" placeholder="jane@acme.com">
+
+    <span class="field-label">Suggested type</span>
+    <div class="type-row" id="acTypeRow"></div>
+
+    <span class="field-label">LinkedIn</span>
+    <input class="hashin" id="acLinkedin" placeholder="https://linkedin.com/in/...">
+    <span class="field-label">Location</span>
+    <input class="hashin" id="acLocation" placeholder="London, UK">
+    <span class="field-label">Phone</span>
+    <input class="hashin" id="acPhone" placeholder="+44 7700 900000">
+
+    <span class="field-label">Why add them? (optional)</span>
+    <textarea id="acNotes" placeholder="How do you know them, or why are they a priority contact?"></textarea>
+
+    <div class="hint">Sends to James (jconnolly@anomaly.com) with everything above. Nothing is added to the CRM automatically — James will review and add it himself.</div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="acCancel">Cancel</button>
+      <button class="btn btn-primary" id="acSend">Send to James</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const LAST_UPDATED = "2026-10-08T14:58:00";
+const OWNER_EMAIL = "jconnolly@anomaly.com";
+// Current clients = Folk person-level Status field = "Current Client" (per-person, not per-company)
+const CURRENT_IDS = new Set([
+"per_2a2979ec-6e64-463c-abc7-49c2611d2455","per_096e23be-cb2d-4a52-b036-e76470f737f1","per_83c6d4ad-99bf-46a1-94f7-7859e29577dc",
+"per_c697b398-c406-4894-8c0e-a2d83fcff07a","per_5b456dfe-3e5a-403c-b7e5-87299cbd4a1b","per_08fcaad0-878e-49ab-98fe-eef125c98ddb",
+"per_0400eef7-ae76-4062-9c53-3dcc41c3aaaf","per_04dc58a8-b2b4-4594-b2ce-d347867e9a15","per_0b06108d-516f-4b97-b397-f3b88a0dee7a",
+"per_0f8b9712-7e57-427c-9daa-e1e0dab75b8b","per_1fe066c5-128a-463a-9f8b-09e6904eb75d","per_2221d38a-0729-4361-9f3b-bd71c88fb8a7",
+"per_27f1fce7-9635-4262-9d0a-6b71b0ab28ca","per_29babc88-9a19-4610-b23b-26cde4f89bcd","per_4d4c6822-0a4c-44cb-abf6-5e269ec072db",
+"per_534a0a05-eca9-495d-affe-02323279285b","per_55b35db1-efe4-4d34-b3ff-dc1ba2c8d4f6","per_56643941-70ab-4702-929f-13d1d670ef42",
+"per_855ded0c-8345-40a3-a77c-a742fa747813","per_86892ee6-1e4e-4d7b-96f0-dae2c139090c","per_8ff0be93-1e23-46fe-8d54-0ccdcee83511",
+"per_a30647f1-484a-4660-95b5-1aaa074de827","per_c1e826b5-a636-426c-a4d4-bdb09d610f3b","per_d5fbf561-20da-43ef-8966-f3c28ef863fe",
+"per_f58f5570-1148-4dac-a873-66a582b1cac3"
+]);
+
+const CONTACTS = [
+{id:"per_5076e46c-98c0-48fa-8dfd-67b84de96225",name:"Alberto Hernandez",title:"Chief Growth Officer",company:"Opella",email:"alberto.lopez@sanofi.com",linkedin:"https://www.linkedin.com/in/alberto-hernandez-lopez/",location:"Paris, Île-de-France, France",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"08-10-26",type:"NOTE",text:"Invite for the right event only.",hashtag:null}]},
+{id:"per_3129485f-3bc2-4998-91c6-af54badcaa55",name:"Alex Mahon",title:"Chief Executive Officer",company:"Superstruct Entertainment",email:"alex.mahon@superstruct.com",linkedin:"linkedin.com/in/dralexmahon",location:"United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"30 Club — President Elect. Alex Mahon CBE. CEO of Superstruct Entertainment (a major British live-entertainment company, one of the largest festival and live-event promoters in the world). Ex-CEO of Channel 4.",interactions:[]},
+{id:"per_e60260ca-838f-4e10-8932-2f0b9c6d53f4",name:"Alex Reeves",title:"Managing Editor, Emea",company:"LBBonline - Little Black Book",email:"alex@lbbonline.com",linkedin:"linkedin.com/in/alexmreeves",location:"London Area, United Kingdom",type:"Press",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"23-09-2026",type:"INVITE",text:"DB invited Alex (Press, LBB) to HOKA \"Learning To Fly\" film screening, but did not attend.",hashtag:null}]},
+{id:"per_4d4c6822-0a4c-44cb-abf6-5e269ec072db",name:"Alexey Bokov",title:"Vice President Marketing Europe",company:"Visa",email:"abokov@visa.com",linkedin:"linkedin.com/in/alexey-bokov-3a57a815",location:"London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"Camilla",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_043e2ec2-2b6d-43cf-9bbb-bf83111a0b55",name:"Alison Lomax",title:"Managing Director Youtube Uk and Ireland",company:"Google",email:"alison.lomax@youtube.com",linkedin:"linkedin.com/in/alisonlomaxgoogle",location:"London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:true,flags:[],details:"",interactions:[]},
+{id:"per_76fe2194-187b-40d6-8966-0464c5f6d015",name:"Amanda Mackenzie",title:"Non Executive Director",company:"Lloyds Banking Group",email:"amanda.mackenzie@lloydsbanking.com",linkedin:"http://www.linkedin.com/in/amanda-mackenzie-obe-a3917b113",location:"",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"30 Club — Membership Sec. Amanda MacKenzie OBE. Lloyds Banking Group NED & Chair of Responsible Business Committee. British Land NED & Chair of Remuneration Committee. Advisory board member, Impact Investment Institute. Chair, The Queen's Reading Room charity.",interactions:[]},
+{id:"per_6d538583-aaa0-4d59-8475-3f8d38b85f2c",name:"Andria Vidler",title:"Chief Executive Officer",company:"Allwyn UK",email:"andria.vidler@allwyn.co.uk",linkedin:"http://www.linkedin.com/in/andriavidler",location:"London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"30 Club — Elected Member. CEO of Allwyn UK and The National Lottery.",interactions:[]},
+{id:"per_98c6ce38-befc-4044-b0a7-483c9cd655ab",name:"Angus Crowther",title:"Founder & Chief Executive Officer",company:"Tuffon Hall Consultancy",email:"angus@tuffonhall.co.uk",linkedin:"https://www.linkedin.com/in/anguscrowther/",location:"Essex",type:"Consultant",cannes:false,newsletter:true,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_d5fbf561-20da-43ef-8966-f3c28ef863fe",name:"Anna McDonald",title:"Global Brand Director of Captain Morgan",company:"Diageo",email:"anna.macdonald@diageo.com",linkedin:"",location:"London, UK",type:"Client",cannes:false,newsletter:false,owner:"Camilla",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_c1e826b5-a636-426c-a4d4-bdb09d610f3b",name:"Antoine Le Nel",title:"Global Chief Growth and Marketing Officer",company:"Revolut",email:"antoine.lenel@revolut.com",linkedin:"linkedin.com/in/antoinelenel",location:"Barcelona, Catalonia, Spain",type:"Client",cannes:true,newsletter:false,owner:"Camilla",ea:{name:"Valeria Pineiro",email:"valeria.pineiro@revolut.com"},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_d61522c3-0b67-4a9e-9205-fb1d77b7482b",name:"Brent Hoberman",title:"Co-Founder and Executive Chair",company:"Founders Forum Group",email:"brent@ff.co",linkedin:"http://www.linkedin.com/in/brenthoberman",location:"London, England, United Kingdom",type:"Consultant",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"30 Club — President. Brent Hoberman CBE. Co-Founder & Chairman of Founders Forum Group, firstminute capital and Founders Factory. Co-Chair, Enterprise Britain. Previously co-founded and exited two unicorns (incl. lastminute.com).",interactions:[]},
+{id:"per_cc1f5667-8c43-49b0-8f13-1311c01c37b2",name:"Cameron Clarke",title:"Editor",company:"The Drum",email:"cameron.clarke@thedrum.com",linkedin:"linkedin.com/in/camclarke",location:"Glasgow, Scotland, United Kingdom",type:"Press",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_6611fa27-ad6b-46ba-8a70-0b8f9a8f1cb8",name:"Charlie Carpenter",title:"Chief Executive Officer",company:"Creativebrief",email:"charlie.c@creativebrief.com",linkedin:"https://www.linkedin.com/in/charlie-carpenter-3966351a/",location:"London",type:"Consultant",cannes:false,newsletter:true,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_1fe066c5-128a-463a-9f8b-09e6904eb75d",name:"Charlotta Oldham",title:"Marketing Director, Emea",company:"Starbucks",email:"coldham@starbucks.com",linkedin:"linkedin.com/in/charlottaoldham",location:"London, England, United Kingdom",type:"Client",cannes:true,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_096e23be-cb2d-4a52-b036-e76470f737f1",name:"Charlotte Gibbon",title:"Senior Director Brand Marketing - International",company:"Diageo",email:"cgibbon@glanbia.com",linkedin:"http://www.linkedin.com/in/charlotte-gibbon-186056a2",location:"United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_0cfa3a97-b79b-441d-9719-2a6e05371741",name:"Charlotte Rawlings",title:"Deputy Creativity and Culture Editor",company:"Campaign UK",email:"charlotte.rawlings@haymarket.com",linkedin:"",location:"London, UK",type:"Press",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"23-09-2026",type:"INVITE",text:"DB invited Charlotte (Press, Campaign UK) to HOKA \"Learning To Fly\" film screening, but declined.",hashtag:null}]},
+{id:"per_83c6d4ad-99bf-46a1-94f7-7859e29577dc",name:"Chris Goddard",title:"Senior Vice President Global Gin Category",company:"Diageo",email:"chris.goddard@diageo.com",linkedin:"linkedin.com/in/chris-goddard-97a5b7a5",location:"Amsterdam, Netherlands",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_bb273448-5594-4849-9c5f-38af6a35dbcb",name:"Chris Kemp",title:"Founder",company:"Ingenuity",email:"chris.kemp@ingenuitylondon.com",linkedin:"https://www.linkedin.com/in/chriskemp1/",location:"London",type:"Consultant",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_dc7f233e-7b6e-4c59-aff6-8b3f6c9ec1f8",name:"Christine Downton",title:"Managing Partner",company:"The Observatory International",email:"christine.downton@observatoryinternational.com",linkedin:"https://www.linkedin.com/in/christinedownton/",location:"London",type:"Consultant",cannes:false,newsletter:true,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_7bdc44b8-3308-40f3-8e4e-4192c6309c7e",name:"Cilesta Van Doorn",title:"Chief Brand and Marketing Officer",company:"BT",email:"cilesta.vandoorn@bt.com",linkedin:"https://www.linkedin.com/in/cilesta-van-doorn-5136191/",location:"London, UK",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:true,flags:[],details:"",interactions:[{date:"08-10-26",type:"NOTE",text:"Client on the BT pitch.",hashtag:null}]},
+{id:"per_55b35db1-efe4-4d34-b3ff-dc1ba2c8d4f6",name:"Connor Smith",title:"Senior Vice President Global Brands - Luxury, Lifestyle, Masterbrand & Global Creative Director",company:"IHG",email:"connor.smith@ihg.com",linkedin:"linkedin.com/in/connormsmith",location:"Atlanta, Georgia, United States",type:"Client",cannes:false,newsletter:false,owner:"Camilla",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_c216b6d1-43c7-458c-af1d-9d8fdf92dbe1",name:"Coral Cranmer",title:"Founder L Brand & Marketing Consultant",company:"THG",email:"coral.cranmer31@thg.com",linkedin:"linkedin.com/in/coralcranmer",location:"United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"20-08-2026",type:"OPPORTUNITY",text:"Came to us with pitch opp. for MyProtein; declined as budget too small",hashtag:null}]},
+{id:"per_0b06108d-516f-4b97-b397-f3b88a0dee7a",name:"Cristina Diezhandino",title:"Chief Marketing Officer",company:"Diageo",email:"cristina.diezhandino@diageo.com",linkedin:"linkedin.com/in/cristina-diezhandino-87655321",location:"London, UK",type:"Client",cannes:true,newsletter:false,owner:"Karina",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_534a0a05-eca9-495d-affe-02323279285b",name:"Daniel Jonten",title:"Vice President Marketing Uk & I + Nordic & Baltic",company:"Visa",email:"jontend@visa.com",linkedin:"https://www.linkedin.com/in/daniel-jont%C3%A9n-166a061/",location:"London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"Camilla",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_07a283ba-50e6-42ba-a864-73a310fb1c21",name:"David Kershaw",title:"CEO",company:"M&C Saatchi PLC",email:"davidk@mcsaatchi.com",linkedin:"http://www.linkedin.com/in/david-kershaw-2b385b12",location:"",type:"Agency",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"30 Club — Banqueting Sec. Former CEO of M&C Saatchi PLC.",interactions:[]},
+{id:"per_de155b86-b468-453e-9040-6bc16cc4d88f",name:"Deirdre Findlay",title:"Founding Member",company:"Olaplex",email:"deirdre@apexstrategicadvisory.com",linkedin:"http://www.linkedin.com/in/deirdre-findlay-429969",location:"London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"08-10-26",type:"NOTE",text:"Invited to a WACL dinner, date not recorded.",hashtag:null}]},
+{id:"per_bfed255e-8696-4195-8126-b611d5d83c59",name:"Donnay Carter",title:"—",company:"Starbucks",email:"docarter@starbucks.com",linkedin:"",location:"",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"08-10-26",type:"NOTE",text:"RTD owner.",hashtag:null}]},
+{id:"per_94b86c24-9cd4-4c66-83de-6a5005a9b431",name:"Duncan Wood",title:"Managing Director",company:"Ingenuity",email:"duncan.wood@ingenuitylondon.com",linkedin:"https://www.linkedin.com/in/duncan-wood-74057a19/",location:"London",type:"Consultant",cannes:false,newsletter:true,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_d319dc02-3dbc-4eff-9929-0169209815e7",name:"Eileen Mannion",title:"Vice President, Uki Marketing, Emea Platform & Devices and Emea Events & Experiences",company:"Google",email:"eileenm@google.com",linkedin:"linkedin.com/in/eileenmannion",location:"United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:true,flags:[],details:"",interactions:[{date:"01-02-2026",type:"INVITE",text:"Karina invited Eileen to 30 Club event in February, but declined/could not make it.",hashtag:null},{date:"08-10-26",type:"NOTE",text:"Invited to the 30 Club dinner in February and declined.",hashtag:null}]},
+{id:"per_c46bc530-98d5-4612-80ed-0a6d9146fdb1",name:"Emily Lewis",title:"Head of Growth - UK, IE and Nordics",company:"Revolut",email:"emily.lewis@revolut.com",linkedin:"",location:"",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"08-10-26",type:"NOTE",text:"UK client. Previously in the global team. Flagged by Camilla as a good contact for tactical work.",hashtag:null}]},
+{id:"per_28e5cf00-c3b9-4dda-95c0-b4835b58ecb1",name:"Emma Botton",title:"Group Brand, Proposition and Marketing Communications Director",company:"Tesco",email:"emma.botton@tesco.com",linkedin:"http://www.linkedin.com/in/emma-botton-8186a5144",location:"London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"08-10-26",type:"NOTE",text:"Attended the 30 Club Christmas dinner with Camilla on 09/12.",hashtag:null}]},
+{id:"per_855ded0c-8345-40a3-a77c-a742fa747813",name:"Esther Van Onselen",title:"Vice President, Brand & Customer Experience Emea",company:"Starbucks",email:"evanonse@starbucks.com",linkedin:"linkedin.com/in/esther-van-onselen-5308203",location:"London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"Camilla",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_8d47bcc2-d8ba-49fc-8b73-ac5d226ed216",name:"Franziska Lewinski",title:"Managing Partner",company:"The Observatory International",email:"franziska.vonlewinski@observatoryinternational.com",linkedin:"https://www.linkedin.com/in/franziska-von-lewinski/",location:"Hamburg",type:"Consultant",cannes:false,newsletter:true,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_37b14394-074c-43ee-9332-a6981d0e24c8",name:"Gabrielle Abrahams",title:"Senior Director Creative, Coca-Cola Brands, Europe",company:"The Coca-Cola Company",email:"gabrahams@coca-cola.com",linkedin:"https://www.linkedin.com/in/gabrielle-abrahams-396b7635",location:"London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_2221d38a-0729-4361-9f3b-bd71c88fb8a7",name:"Giles Hedger",title:"Global Consumer Planning Director",company:"Diageo",email:"giles.hedger@diageo.com",linkedin:"linkedin.com/in/giles-hedger-5702444a",location:"United Kingdom",type:"Client",cannes:true,newsletter:false,owner:"Camilla",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_a165137d-2a8c-45e6-b0b1-f93522d53814",name:"Giles Morrison",title:"Marketing Transformation Vice President",company:"Tesco",email:"giles.morrison@tesco.com",linkedin:"https://www.linkedin.com/in/gimorrison/",location:"London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"08-10-26",type:"NOTE",text:"Contract role. Congratulated on the new appointment on LinkedIn by Camilla and JV.",hashtag:null}]},
+{id:"per_74d1878f-2fb2-4946-ae84-d8bb93aa9f57",name:"Gill Huber",title:"Managing Director",company:"Ingenuity",email:"gill.huber@ingenuitylondon.com",linkedin:"https://www.linkedin.com/in/gill-huber-95993814/",location:"London",type:"Consultant",cannes:false,newsletter:true,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_32f53632-ad26-452f-a767-fa7eeab3156b",name:"Grant Duncan",title:"Client Service Partner and Managing Director Consumer, Media and Digital Emea",company:"Korn Ferry",email:"grant.duncan@kornferry.com",linkedin:"linkedin.com/in/thegrantduncan",location:"London, England, United Kingdom",type:"Agency",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"30 Club — Hon Sec. Senior Client Partner, Consumer, Marketing and Digital at Korn Ferry.",interactions:[]},
+{id:"per_61c08416-a506-4c0b-940b-59a58e32be0d",name:"Grant McKenzie",title:"Creative Director (Sparkling Flavours)",company:"The Coca-Cola Company",email:"gmckenzie@coca-cola.com",linkedin:"http://www.linkedin.com/in/grant-mckenzie-7a20b58a",location:"London, UK",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_c5fb587f-de0f-44e6-b878-cd8f525be6ad",name:"Gurjit Degun",title:"Creativity and Culture Editor",company:"Campaign UK",email:"gurjit.degun@haymarket.com",linkedin:"http://www.linkedin.com/in/gurjitdegun",location:"",type:"Press",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_aa9e22f5-c248-41c9-a7f4-b650a9a68897",name:"Guy Laurence",title:"Chief Executive Officer",company:"Chelsea Football Club",email:"guy.laurence@chelseafc.com",linkedin:"",location:"London, UK",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"30 Club — Hon Treasurer. Ex-CEO of Chelsea Football Club; ex-Vodafone.",interactions:[]},
+{id:"per_0dfb843e-b423-4103-987f-90f24d7c6e88",name:"Hannah Rouch",title:"Vice President Marketing, Europe",company:"AXS",email:"hrouch@g.axs.com",linkedin:"https://www.linkedin.com/in/hannah-rouch-35698632",location:"London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"26-08-2026",type:"OPP",text:"UK clIENT, involved in unconverted AXS opp",hashtag:"#WarmLead"}]},
+{id:"per_86892ee6-1e4e-4d7b-96f0-dae2c139090c",name:"Harry Phillips",title:"Marketing Director",company:"Sky Bet",email:"harry.phillips@flutteruki.com",linkedin:"linkedin.com/in/harry-phillips-72461137",location:"London, England, United Kingdom",type:"Client",cannes:true,newsletter:false,owner:"Camilla",ea:{name:"Staci Wilson",email:"staci.wilson@flutteruki.com"},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_97c14ec0-54f6-49cf-ae9a-ff0169fef377",name:"Helen Calcraft",title:"Founding Partner",company:"Lucky Generals",email:"helen.calcraft@luckygenerals.com",linkedin:"linkedin.com/in/helen-calcraft-b0080a15",location:"London, England, United Kingdom",type:"Agency",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"30 Club — Past President. Founding Partner at Lucky Generals.",interactions:[]},
+{id:"per_595e174f-477e-450c-bd04-5dca63997faa",name:"Henry Poynor",title:"Marketing Director - Stills & Hydration Category - Europe",company:"The Coca-Cola Company",email:"hpoynor@coca-cola.com",linkedin:"https://www.linkedin.com/in/henry-poynor-22604598/",location:"Netherlands",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_5a30a77a-fde3-4938-8d5b-26a5eb50812e",name:"Ishan Chatterjee",title:"Vice President, Global Growth",company:"MediaSense",email:"ishan.chatterjee@media-sense.com",linkedin:"https://www.linkedin.com/in/chatterjeeishan/",location:"London",type:"Consultant",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_dadb6a67-875f-4e1e-9e1f-7f4f3fb26719",name:"James Murphy",title:"Chief Executive Officer",company:"Ogilvy UK",email:"james.murphy@ogilvy.com",linkedin:"linkedin.com/in/james-murphy-07872216",location:"London, England, United Kingdom",type:"Agency",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"30 Club — Elected Member. CEO of Ogilvy UK; Founder of New Commercial Arts.",interactions:[]},
+{id:"per_8ff0be93-1e23-46fe-8d54-0ccdcee83511",name:"James Rothwell",title:"Senior Vice President Marketing",company:"Zalando",email:"james.rothwell@zalando.de",linkedin:"linkedin.com/in/james-rothwell-85421430",location:"United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"Camilla",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_9ac78dae-3e86-4153-88c9-eed4264f68ac",name:"Jen Faull",title:"Deputy Editor",company:"The Drum",email:"jen.faull@thedrum.com",linkedin:"https://www.linkedin.com/in/jenfaull/",location:"London",type:"Press",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_1383d4c1-422f-4b74-84a5-04aac8dd53aa",name:"Jennifer Prakash",title:"Group Agency Operations Manager, EMEA & APAC - Marketing Operations",company:"Google",email:"jeprakash@google.com",linkedin:"http://www.linkedin.com/in/jennifer-prakash-0a469b4",location:"London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:true,flags:[],details:"",interactions:[]},
+{id:"per_c697b398-c406-4894-8c0e-a2d83fcff07a",name:"Joao Matos",title:"Global Category Director - Gin, Rum & Liqueur",company:"Diageo",email:"",linkedin:"http://www.linkedin.com/in/jo%c3%a3o-teodoro-de-matos-0aba9520",location:"Amsterdam, Netherlands",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_27f1fce7-9635-4262-9d0a-6b71b0ab28ca",name:"Julie Bramham",title:"Global Category Director Whisky & Luxury",company:"Diageo",email:"julie.bramham@diageo.com",linkedin:"linkedin.com/in/julie-bramham-1765b817",location:"London, UK",type:"Client",cannes:false,newsletter:false,owner:"Camilla",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_74cce546-a898-4d78-ab89-1f0af89531dd",name:"Justin Martin",title:"Gb Creative Director (All CCTM Brands)",company:"The Coca-Cola Company",email:"justmartin@coca-cola.com",linkedin:"linkedin.com/in/justin-martin-13b9689",location:"London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"23-09-2026",type:"INVITE",text:"DB invited Justin (Prospect, Coca-Cola) to HOKA \"Learning To Fly\" film screening, but declined (couldn't make it).",hashtag:null}]},
+{id:"per_c5a85adb-0785-4645-98fe-a54ac144cccf",name:"Katie Bradshaw",title:"Head of marketing - Brand and Sponsorship",company:"Flutter UK & Ireland",email:"katie.bradshaw@flutteruki.com",linkedin:"https://www.linkedin.com/in/katie-bradshaw-68085026",location:"Greater Leeds Area",type:"Client",cannes:false,newsletter:false,owner:"Camilla",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_724b76b0-3e08-4b02-bb71-f275a56e5c20",name:"Kim Maniovich",title:"Global Head of Marketing, Revolut Business",company:"Revolut",email:"kim.maniovich@revolut.com",linkedin:"linkedin.com/in/kimmaniovich",location:"London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"08-10-26",type:"NOTE",text:"Business banking side of Revolut.",hashtag:null}]},
+{id:"per_f58f5570-1148-4dac-a873-66a582b1cac3",name:"Kimberly Kadlec",title:"Chief Marketing Officer Visa Europe",company:"Visa",email:"kimkadle@visa.com",linkedin:"linkedin.com/in/kimberlykadlec",location:"United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"Camilla",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_08fcaad0-878e-49ab-98fe-eef125c98ddb",name:"Laura Pearce",title:"Marketing Director, Diageo Luxury Company Gb",company:"Diageo",email:"laura.pearce@diageo.com",linkedin:"linkedin.com/in/laura-pearce-ba3b1612",location:"London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_4484d1b4-7b89-4a3c-b447-e0cedb11707f",name:"Lucinda Peniston-Baines",title:"Co-Founder & Managing Partner",company:"The Observatory International",email:"lucinda.penistonbaines@observatoryinternational.com",linkedin:"https://www.linkedin.com/in/lucindapenistonbaines/",location:"London",type:"Consultant",cannes:false,newsletter:true,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_0f8b9712-7e57-427c-9daa-e1e0dab75b8b",name:"Lucy Flitcroft",title:"Head of Marketing Strategy",company:"Sky Bet",email:"",linkedin:"https://www.linkedin.com/in/lucy-flitcroft-8a6102a3",location:"London, England, United Kingdom",type:"Client",cannes:true,newsletter:false,owner:"Camilla",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_e01d2b17-88cd-466b-83f0-a60a3813f7a4",name:"Luke Goldsmith",title:"Brand Lead",company:"Hastings Direct",email:"lukegoldsmith@hastingsdirect.com",linkedin:"",location:"",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_7a38d9c9-abe5-4171-b2d5-d51810646957",name:"Maisie McCabe",title:"UK Editor",company:"Haymarket",email:"maisie.mccabe@haymarket.com",linkedin:"",location:"London, England, United Kingdom",type:"Press",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"08-10-26",type:"NOTE",text:"Toby judging the Campaign Big Awards.",hashtag:null}]},
+{id:"per_67cacab1-5010-4512-b34c-bef0fc03e99e",name:"Mary Gasco-Buisson",title:"CEO",company:"Unilever",email:"mc.gasco-buisson@unilever.com",linkedin:"https://www.linkedin.com/in/mc-gasco-buisson",location:"United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"27-08-2026",type:"INVITE",text:"Karina invited her to Vox Media dinner, but declined",hashtag:"#WarmLead"}]},
+{id:"per_a216431f-9f6c-4a52-b0ac-d2d89b7eb6eb",name:"Michelle Rousseau",title:"Chief Marketing Officer",company:"Starling Bank",email:"michele.rousseau@starlingbank.com",linkedin:"linkedin.com/in/mirousseau",location:"",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"08-10-26",type:"NOTE",text:"Sat next to her at WACL. Attending the Forbes CMO Summit in November. Flagged by Camilla as likely to move, possibly to Visa.",hashtag:null}]},
+{id:"per_9e814e44-ac20-411a-a266-92cf79db271d",name:"Mike Cooper",title:"Chair & Non-Executive Director",company:"",email:"",linkedin:"",location:"",type:"Other",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"30 Club — Elected Member. Experienced Chair and NED.",interactions:[]},
+{id:"per_5b456dfe-3e5a-403c-b7e5-87299cbd4a1b",name:"Neil Shah",title:"Global Brand Director (Vp) , Whiskey Portfolio",company:"Diageo",email:"neil.shah@diageo.com",linkedin:"linkedin.com/in/neilshah1",location:"Amsterdam, Netherlands",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_6a02dca0-5ec9-44d0-b7b7-52d000e95406",name:"Nick Elliott",title:"Board Account Director",company:"Booster Consulting",email:"nick@consultbooster.com",linkedin:"https://www.linkedin.com/in/nickjpelliott/",location:"London",type:"Consultant",cannes:false,newsletter:true,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_56643941-70ab-4702-929f-13d1d670ef42",name:"Nikki Doucet",title:"Chief Executive Officer",company:"Women's Super League",email:"nikki.doucet@womenspro-game.com",linkedin:"linkedin.com/in/nikki-doucet-52154793",location:"United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_2933bef4-1107-4329-a3b5-0f3a833709e4",name:"Paul Phillips",title:"Partner",company:"AAR",email:"pphillips@aargroup.co.uk",linkedin:"linkedin.com/in/paulbphillips",location:"London",type:"Consultant",cannes:false,newsletter:true,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_d9cfa635-11a8-4784-aac3-f9523638dd91",name:"Peter Duffy",title:"Chief Executive Officer",company:"MONY Group PLC",email:"peter.duffy@monygroup.com",linkedin:"linkedin.com/in/peter-duffy-36a36a22",location:"London Area, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"30 Club — Elected Member. Chief Executive Officer of MONY Group PLC (MoneySuperMarket, Money Saving Expert, TravelSupermarket).",interactions:[]},
+{id:"per_edfbb345-6c20-465b-9059-715edef0a98b",name:"Pietro Matteucci",title:"Senior Director, Marketing - Creative Strategy",company:"The Coca-Cola Company",email:"pmatteucci@coca-cola.com",linkedin:"http://www.linkedin.com/in/pietro-matteucci-a9887535",location:"Madrid, Spain",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_61f8e9aa-af7f-491d-9301-6b5096f27e76",name:"Ralph Rijks",title:"Chief Marketing Officer",company:"Just Eat",email:"ralph.rijks@justeattakeaway.com",linkedin:"https://www.linkedin.com/in/ralphrijks/",location:"The Randstad, Netherlands",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_c1cca973-c999-4516-bab0-b2f13f9251fb",name:"Rebecca Nunneley",title:"Partner",company:"AAR",email:"rnunneley@aargroup.co.uk",linkedin:"https://www.linkedin.com/in/rebecca-nunneley/",location:"London",type:"Consultant",cannes:false,newsletter:true,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_5c60ebd9-a27e-4097-b994-3c04eb7f7636",name:"Richard Eyre",title:"Chair",company:"IAB UK",email:"richard@iab.com",linkedin:"linkedin.com/in/richard-eyre-cbe-41125168",location:"",type:"Other",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"30 Club — Co-opted Member. Richard Eyre CBE. Chair of IAB; ex-CEO of ITV and Pearson Television.",interactions:[]},
+{id:"per_27acc32f-b176-4d42-8a90-b865978e0a06",name:"Robert Foster",title:"Managing Partner",company:"The Observatory International",email:"rob.foster@observatoryinternational.com",linkedin:"https://www.linkedin.com/in/robertjohnfoster/",location:"London",type:"Consultant",cannes:false,newsletter:true,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"23-09-2026",type:"INVITE",text:"DB invited Rob (Consultant, Observatory) to HOKA \"Learning To Fly\" film screening, but declined (Eurostar conflict).",hashtag:null}]},
+{id:"per_02e5ebeb-57b7-448b-919d-961a32c35022",name:"Rory Miller-Cheevers",title:"Partner & Director (Growth)",company:"Revolut",email:"rory.miller-cheevers@revolut.com",linkedin:"http://www.linkedin.com/in/rory-miller-cheevers",location:"",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"08-10-26",type:"NOTE",text:"Invite depends on when he is in the UK.",hashtag:null}]},
+{id:"per_a82f537f-3b8c-4f8c-ab34-3a1573893b12",name:"Rose Holden",title:"Marketing Director, Sky Tv",company:"Sky",email:"rose.holden@sky.uk",linkedin:"linkedin.com/in/rose-holden-34014b4",location:"London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"08-10-26",type:"NOTE",text:"No recorded contact yet.",hashtag:null}]},
+{id:"per_a5a4b517-283e-47ad-b1e9-a0c80ef2ddda",name:"Ruth Hooper",title:"Chief Marketing Officer",company:"Women's Super League",email:"ruth.hooper@womenspro-game.com",linkedin:"http://www.linkedin.com/in/ruthhooper",location:"Mithian, England, United Kingdom",type:"Client",cannes:true,newsletter:false,owner:"Camilla",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_a6f194da-5cab-4e02-9b83-f41062ac6778",name:"Seth Matlins",title:"Managing Director",company:"Forbes",email:"smatlins@forbes.com",linkedin:"",location:"",type:"Press",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"08-10-26",type:"NOTE",text:"Working together on the Forbes Europe CMO Summit in November.",hashtag:null}]},
+{id:"per_640c371c-9074-4f3a-b104-cc7599608674",name:"Severine Autret",title:"Global Creative Excellence, Content & Partnerships Lead",company:"Opella",email:"severine.autret@opella.com",linkedin:"linkedin.com/in/severine-autret-3206144",location:"Paris, Île-de-France, France",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_2a2979ec-6e64-463c-abc7-49c2611d2455",name:"Sophie More",title:"Global Brand Director Captain Morgan",company:"Diageo",email:"sophie.more@diageo.com",linkedin:"",location:"London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_283cf072-ba32-4ccb-b547-e9a587c17305",name:"Stephanie Nattu",title:"Managing Director",company:"Creativebrief",email:"stephanie.n@creativebrief.com",linkedin:"linkedin.com/in/stephanie-nattu-a35741a",location:"London",type:"Consultant",cannes:false,newsletter:true,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"23-09-2026",type:"INVITE",text:"DB invited Stephanie (Consultant, Creativebrief) to HOKA \"Learning To Fly\" film screening, but declined.",hashtag:null}]},
+{id:"per_db025baa-49d5-4af3-acf8-77d6cd6cc643",name:"Stephen Miron",title:"Group Chief Executive",company:"Global Media & Entertainment",email:"stephen@global.com",linkedin:"http://www.linkedin.com/in/stephen-miron-9a249a17",location:"London, England, United Kingdom",type:"Other",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"30 Club — Committee Chair. Chair, Global Media & Entertainment.",interactions:[]},
+{id:"per_670a2472-c4c1-4200-9c61-39447a0714e1",name:"Susan O'Brien",title:"Chief Marketing Officer (Part-time)",company:"Just Eat",email:"suso@yellowdays.com",linkedin:"http://www.linkedin.com/in/susoltd",location:"United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"08-10-26",type:"NOTE",text:"Between roles. Linked to Just Eat as her former employer. Came to the 30 Club dinner in March 2025.",hashtag:null}]},
+{id:"per_08f64cfa-6096-4c2e-814d-b6495b2acf3a",name:"Sweta Patel",title:"Global Chief Marketing Officer",company:"AXS",email:"swpatel@axs.com",linkedin:"https://www.linkedin.com/in/sweta-patel-kamath",location:"Los Angeles Metropolitan Area",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"26-08-2026",type:"OPP",text:"Decision-maker, involved in unconverted AXS opp",hashtag:"#WarmLead"}]},
+{id:"per_f177ff8c-bc5a-42dc-bfb4-403061a14850",name:"Tina Fegent",title:"Co-Founder",company:"Fegent Group",email:"tf@tinafegent.com",linkedin:"https://www.linkedin.com/in/tina-fegent-fcips-2103573/",location:"London",type:"Consultant",cannes:false,newsletter:true,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_04dc58a8-b2b4-4594-b2ce-d347867e9a15",name:"Tobi Fink",title:"Head of Brand Activation",company:"Revolut",email:"tobias.fink@revolut.com",linkedin:"linkedin.com/in/tobi-fink-b93113116",location:"London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"Camilla",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_af954f02-c08c-43ca-95ad-f55ef5596d63",name:"Tom Daniell",title:"Chief Marketing Officer",company:"Hastings Direct",email:"tomdaniell@hastingsdirect.com",linkedin:"http://www.linkedin.com/in/tomdaniell",location:"Greater London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[{date:"08-10-26",type:"NOTE",text:"Interim role. Taken to the 30 Club dinner with Lord Timpson on 11/11.",hashtag:null}]},
+{id:"per_a30647f1-484a-4660-95b5-1aaa074de827",name:"Ursula Melgar",title:"Marketing and Innovation Director",company:"Diageo",email:"ursula.mejiamelgar@diageo.com",linkedin:"linkedin.com/in/ursulamejiamelgar",location:"London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"Camilla",ea:{name:"Theresa Rickrood",email:"Theresa.Rickwood@diageo.com"},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_fac7dc53-1461-4a23-b2fd-de85f0da864d",name:"Victoria Fox",title:"Chief Executive Officer",company:"AAR",email:"vfox@aargroup.co.uk",linkedin:"https://www.linkedin.com/in/victoria-fox-4681878/",location:"London",type:"Consultant",cannes:false,newsletter:true,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_29babc88-9a19-4610-b23b-26cde4f89bcd",name:"Victoria Robertson",title:"Marketing Director Starbucks Uk",company:"Starbucks",email:"vroberts@starbucks.com",linkedin:"linkedin.com/in/victoria-robertson-bb58b723",location:"Greater London, England, United Kingdom",type:"Client",cannes:false,newsletter:false,owner:"Camilla",ea:{name:"Emma Greenway",email:""},prospect:false,flags:[],details:"",interactions:[]},
+{id:"per_097eb139-0b2f-40f5-959d-0594573762bc",name:"Will Hamilton",title:"Intermediary / Founder",company:"Hamilton Associates",email:"will@haiconsulting.com",linkedin:"https://www.linkedin.com/in/will-hamilton-688139a/",location:"London",type:"Consultant",cannes:false,newsletter:true,owner:"",ea:{name:"",email:""},prospect:false,flags:[],details:"",interactions:[]}
+];
+
+// ---------- derive group ----------
+function groupOf(c){
+  if(c.type==="Agency") return "Agency";
+  if(c.type==="Consultant") return "Consultants";
+  if(c.type==="Press") return "Press";
+  if(c.type==="Other") return "Other Contacts";
+  return CURRENT_IDS.has(c.id) ? "Current Clients" : "Other Clients & Prospects";
+}
+CONTACTS.forEach(c=>{ c.group=groupOf(c); });
+
+const GROUP_ORDER = ["Current Clients","Other Clients & Prospects","Agency","Consultants","Press","Other Contacts"];
+const GROUP_COLOR = {"Current Clients":"var(--a-current)","Other Clients & Prospects":"var(--a-other)","Agency":"var(--a-agency)","Consultants":"var(--a-consultant)","Press":"var(--a-press)","Other Contacts":"var(--a-misc)"};
+const GROUP_TAB = {"Current Clients":"Current clients","Other Clients & Prospects":"Other clients","Agency":"Agency","Consultants":"Consultants","Press":"Press","Other Contacts":"Other"};
+
+let activeGroup = "All";
+let query = "";
+
+function hashHue(str){ let h=0; for(let i=0;i<str.length;i++){ h=str.charCodeAt(i)+((h<<5)-h); } return Math.abs(h)%360; }
+function initials(name){ const p=name.trim().split(/\s+/); return (((p[0]||"")[0]||"")+((p[p.length-1]||"")[0]||"")).toUpperCase(); }
+function avatarBg(name){ const hue=hashHue(name); const dark=document.documentElement.getAttribute("data-theme")!=="light"; return dark?`hsl(${hue},9%,12%)`:`hsl(${hue},12%,93%)`; }
+function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function shortUrl(u){ return u.replace(/^https?:\/\/(www\.)?/,"").replace(/\/$/,""); }
+function fmtInteraction(i){
+  const date=esc(i.date||"??");
+  const type=esc(i.type||"NOTE");
+  let line=`${date} <span class="tag">${type}</span> ${esc(i.text||"")}`;
+  if(i.hashtag) line+=` <span class="tag">${esc(i.hashtag)}</span>`;
+  return `<div>${line}</div>`;
+}
+
+const ic={
+  mail:'<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 7l9 6 9-6"></path></svg>',
+  li:'<svg viewBox="0 0 24 24"><path d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM0 8h5v16H0V8zm7.5 0h4.78v2.19h.07c.67-1.2 2.3-2.46 4.73-2.46 5.06 0 6 3.33 6 7.66V24h-5v-6.9c0-1.65-.03-3.77-2.3-3.77-2.3 0-2.65 1.8-2.65 3.65V24h-5V8z"/></svg>',
+  pin:'<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>',
+  news:'<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13v16H4z"></path><path d="M17 8h3v10a2 2 0 0 1-2 2"></path><path d="M7 8h7M7 12h7M7 16h4"></path></svg>',
+  user:'<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg>',
+  check:'<svg class="tick" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"></path></svg>'
+};
+
+function card(c){
+  const letter=c.name[0].toUpperCase();
+  const accent=GROUP_COLOR[c.group];
+  const interactions=c.interactions||[];
+  // status pills
+  const pills=[];
+  if(c.group==="Current Clients") pills.push('<span class="pill current"><span class="mk"></span>Current client</span>');
+  if(c.cannes) pills.push('<span class="pill cannes"><span class="mk"></span>Cannes ’26</span>');
+  if(interactions.length) pills.push(`<span class="pill note-i">${ic.check}Interactions</span>`);
+  // detail rows — title, location, email, linkedin, EA, owner, newsletter
+  const drows=[];
+  drows.push(`<div class="drow">${ic.user}<span>${esc(c.title)}</span></div>`);
+  if(c.location) drows.push(`<div class="drow">${ic.pin}<span>${esc(c.location)}</span></div>`);
+  if(c.email) drows.push(`<div class="drow">${ic.mail}<button class="linkish" data-copy="${esc(c.email)}">${esc(c.email)}</button></div>`);
+  if(c.linkedin) drows.push(`<div class="drow li">${ic.li}<a href="${esc(c.linkedin)}" target="_blank" rel="noopener">${esc(shortUrl(c.linkedin))}</a></div>`);
+  if(c.ea && c.ea.name){
+    const eaLabel=`EA · ${esc(c.ea.name)}`+(c.ea.email?` (${esc(c.ea.email)})`:"");
+    drows.push(c.ea.email
+      ? `<div class="drow">${ic.user}<button class="linkish" data-copy="${esc(c.ea.email)}">${eaLabel}</button></div>`
+      : `<div class="drow">${ic.user}<span>${eaLabel}</span></div>`);
+  }
+  if(c.owner) drows.push(`<div class="drow">${ic.user}<span>Owner · ${esc(c.owner)}</span></div>`);
+  if(c.newsletter) drows.push(`<div class="drow">${ic.news}<span>Receives the Anomaly newsletter</span></div>`);
+
+  // flag pills — prospect + data-quality flags, shown inside More info, not on the card face
+  const flagPills=[];
+  if(c.prospect) flagPills.push('<span class="pill flag"><span class="mk"></span>Prospect</span>');
+  (c.flags||[]).forEach(f=>flagPills.push(`<span class="pill flag"><span class="mk"></span>${esc(f)}</span>`));
+  const flagsBlock=flagPills.length?`<div class="dots" style="margin-top:10px">${flagPills.join("")}</div>`:"";
+
+  const detailsBlock=c.details?`<div class="dnote"><div class="dh">More info</div>${esc(c.details)}</div>`:"";
+  const interactionsBlock=interactions.length?`<div class="dnote"><div class="dh">Interactions</div>${interactions.map(fmtInteraction).join("")}</div>`:"";
+
+  // footer quick actions
+  const mailBtn=c.email?`<button class="iconbtn" title="Copy email" data-copy="${esc(c.email)}">${ic.mail}</button>`:"";
+  const liBtn=c.linkedin?`<a class="iconbtn li" title="Open LinkedIn (new tab)" href="${esc(c.linkedin)}" target="_blank" rel="noopener">${ic.li}</a>`:"";
+  const ownerChip=c.owner?`<span class="owner-chip">${esc(c.owner)}</span>`:'<span class="owner-chip"></span>';
+
+  return `<div class="card" data-letter="${letter}" style="--accent:${accent}">
+    <button class="add-btn" data-id="${esc(c.id)}" title="Add a note for James"><span class="plus">+</span> Add note</button>
+    <div class="card-top">
+      <div class="avatar" style="background:${avatarBg(c.name)}"><img src="photos/${esc(c.id)}.jpg" alt="" loading="lazy" onerror="this.remove()"><span>${esc(initials(c.name))}</span></div>
+      <div class="card-id">
+        <div class="name">${esc(c.name)}</div>
+        <div class="title">${esc(c.title)}</div>
+        <div class="company">${esc(c.company)}</div>
+        <div class="loc">${ic.pin}<span>${c.location?esc(c.location):"TBC"}</span></div>
+      </div>
+    </div>
+    <div class="dots">${pills.join("")}</div>
+    <div class="foot">
+      ${mailBtn}${liBtn}${ownerChip}
+      <div class="more-wrap">
+        <button class="more-btn">More</button>
+        <div class="detail">
+          <div class="dh">${esc(c.company)}</div>
+          <div class="dtitle">${esc(c.name)}</div>
+          ${drows.join("")}
+          ${flagsBlock}
+          ${detailsBlock}
+          ${interactionsBlock}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function currentPool(){
+  const q=query.trim().toLowerCase();
+  return CONTACTS.filter(c=>{
+    if(activeGroup!=="All" && c.group!==activeGroup) return false;
+    if(q) return (c.name+' '+c.company+' '+c.title+' '+c.owner+' '+c.location).toLowerCase().includes(q);
+    return true;
+  });
+}
+
+function render(){
+  const board=document.getElementById("board");
+  const pool=currentPool();
+  const groups = activeGroup==="All" ? GROUP_ORDER : [activeGroup];
+  let html="";
+  groups.forEach(g=>{
+    const list=pool.filter(c=>c.group===g).sort((a,b)=>a.name.localeCompare(b.name));
+    if(!list.length) return;
+    html+=`<div class="section" id="sec-${g.replace(/[^a-z]/gi,'')}"><div class="section-head"><span class="sq" style="background:${GROUP_COLOR[g]}"></span><span class="kicker">${esc(g)}</span><span class="count">${list.length}</span></div><div class="grid">${list.map(card).join("")}</div></div>`;
+  });
+  board.innerHTML=html;
+  document.getElementById("empty").style.display = html?"none":"block";
+  bindCards();
+  buildRail();
+}
+
+function buildTabs(){
+  const counts={All:CONTACTS.length};
+  GROUP_ORDER.forEach(g=>counts[g]=CONTACTS.filter(c=>c.group===g).length);
+  const tabs=document.getElementById("tabs");
+  let html=`<button class="tab${activeGroup==='All'?' active':''}" data-g="All">All<span class="n">${counts.All}</span></button>`;
+  GROUP_ORDER.forEach(g=>{
+    html+=`<button class="tab${activeGroup===g?' active':''}" data-g="${esc(g)}"><span class="tdot" style="background:${GROUP_COLOR[g]}"></span>${esc(GROUP_TAB[g])}<span class="n">${counts[g]||0}</span></button>`;
+  });
+  tabs.innerHTML=html;
+  tabs.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{ activeGroup=b.dataset.g; buildTabs(); render(); });
+}
+
+function buildRail(){
+  const rail=document.getElementById("azrail");
+  const present=new Set([...document.querySelectorAll(".card")].map(el=>el.dataset.letter));
+  const letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+  rail.innerHTML=letters.map(L=>`<button data-l="${L}"${present.has(L)?"":" disabled"}>${L}</button>`).join("");
+  rail.querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    const t=[...document.querySelectorAll(".card")].find(el=>el.dataset.letter===b.dataset.l);
+    if(t) t.scrollIntoView({behavior:"smooth",block:"start"});
+  });
+}
+
+// ---------- cards: copy email, pin popover ----------
+function bindCards(){
+  document.querySelectorAll(".add-btn").forEach(b=>b.onclick=()=>openModal(b.dataset.id));
+  document.querySelectorAll("[data-copy]").forEach(b=>b.onclick=(e)=>{ e.preventDefault(); copyEmail(b.getAttribute("data-copy")); });
+  document.querySelectorAll(".more-btn").forEach(b=>b.onclick=(e)=>{
+    e.stopPropagation();
+    const wrap=b.closest(".more-wrap");
+    const wasPinned=wrap.classList.contains("pinned");
+    document.querySelectorAll(".more-wrap.pinned").forEach(w=>w.classList.remove("pinned"));
+    if(!wasPinned) wrap.classList.add("pinned");
+  });
+  // hover with a short close-delay so crossing the gap between the button and
+  // the popover (which sits a few px below it) doesn't drop the hover state
+  document.querySelectorAll(".more-wrap").forEach(wrap=>{
+    wrap.addEventListener("mouseenter",()=>{ clearTimeout(wrap._hideTimer); wrap.classList.add("hover-show"); });
+    wrap.addEventListener("mouseleave",()=>{ wrap._hideTimer=setTimeout(()=>wrap.classList.remove("hover-show"),250); });
+  });
+}
+document.addEventListener("click",e=>{ if(!e.target.closest(".more-wrap")) document.querySelectorAll(".more-wrap.pinned").forEach(w=>w.classList.remove("pinned")); });
+
+async function copyEmail(addr){
+  try{ await navigator.clipboard.writeText(addr); toast("Email copied — "+addr); }
+  catch(e){
+    const ta=document.createElement("textarea"); ta.value=addr; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); toast("Email copied — "+addr); }catch(_){ toast("Couldn't copy — "+addr); }
+    ta.remove();
+  }
+}
+function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2200); }
+
+// ---------- add-note modal ----------
+let currentContact=null;
+const ENTRY_TYPE="NOTE";
+function folkDate(){ const d=new Date(); const p=n=>String(n).padStart(2,'0'); return `${p(d.getDate())}-${p(d.getMonth()+1)}-${String(d.getFullYear()).slice(2)}`; }
+function suggestedLine(){
+  const note=document.getElementById("mText").value.trim().replace(/\s+/g," ");
+  let hash=document.getElementById("mHash").value.trim();
+  if(hash && !hash.startsWith("#")) hash="#"+hash;
+  return `${folkDate()} | ${ENTRY_TYPE} | ${note||"add detail"}${hash?" "+hash:""}`;
+}
+function updatePreview(){ document.getElementById("mPreview").textContent=suggestedLine(); }
+function openModal(id){
+  currentContact=CONTACTS.find(c=>c.id===id);
+  document.getElementById("mName").textContent=currentContact.name;
+  document.getElementById("mWho").textContent=`${currentContact.title} · ${currentContact.company}`+(currentContact.owner?` · Owner: ${currentContact.owner}`:"");
+  document.getElementById("mText").value=""; document.getElementById("mHash").value="";
+  updatePreview();
+  document.getElementById("modalScrim").classList.add("open");
+  setTimeout(()=>document.getElementById("mText").focus(),50);
+}
+function closeModal(){ document.getElementById("modalScrim").classList.remove("open"); currentContact=null; }
+function buildBody(){
+  const c=currentContact; const raw=document.getElementById("mText").value.trim();
+  return `New note for ${c.name} (${c.company})\n\n`+
+    `ORIGINAL NOTE (as written):\n${raw||"(none entered)"}\n\n`+
+    `SUGGESTED CRM ENTRY (review before adding):\n${suggestedLine()}\n\n`+
+    `— — — — — — — — — —\nFor Claude / CRM:\n`+
+    `Contact: ${c.name}\nTitle: ${c.title}\nCompany: ${c.company}\nOwner: ${c.owner||"—"}\nCRM record ID: ${c.id}\n`;
+}
+document.getElementById("mText").addEventListener("input",updatePreview);
+document.getElementById("mHash").addEventListener("input",updatePreview);
+document.getElementById("mCancel").onclick=closeModal;
+document.getElementById("modalScrim").onclick=(e)=>{ if(e.target.id==="modalScrim") closeModal(); };
+document.getElementById("mSend").onclick=()=>{
+  const c=currentContact;
+  const subject=`CRM note — ${c.name} (${c.company})`;
+  window.location.href=`mailto:${OWNER_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(buildBody())}`;
+  closeModal();
+};
+document.getElementById("mCopy").onclick=async()=>{
+  try{ await navigator.clipboard.writeText(buildBody()); toast("Note copied — paste it to James"); }
+  catch(e){ toast("Copy failed — select the text manually"); }
+};
+
+// ---------- add-contact modal ----------
+const CONTACT_TYPES=["Client","Consultant","Press","Agency","Other"];
+let acSelectedType="";
+(function(){
+  const row=document.getElementById("acTypeRow");
+  row.innerHTML=CONTACT_TYPES.map(t=>`<button type="button" class="type-btn" data-t="${esc(t)}">${esc(t)}</button>`).join("");
+  row.querySelectorAll(".type-btn").forEach(b=>b.onclick=()=>{
+    acSelectedType = acSelectedType===b.dataset.t ? "" : b.dataset.t;
+    row.querySelectorAll(".type-btn").forEach(x=>x.classList.toggle("sel", x.dataset.t===acSelectedType));
+  });
+})();
+const AC_FIELDS=["acFirst","acLast","acTitle","acCompany","acEmail"];
+function acClear(){
+  [...AC_FIELDS,"acLinkedin","acLocation","acPhone","acNotes"].forEach(id=>document.getElementById(id).value="");
+  acSelectedType="";
+  document.getElementById("acTypeRow").querySelectorAll(".type-btn").forEach(x=>x.classList.remove("sel"));
+}
+function openAddContactModal(){
+  acClear();
+  document.getElementById("addContactScrim").classList.add("open");
+  setTimeout(()=>document.getElementById("acFirst").focus(),50);
+}
+function closeAddContactModal(){ document.getElementById("addContactScrim").classList.remove("open"); }
+document.getElementById("addContactBtn").onclick=openAddContactModal;
+document.getElementById("acCancel").onclick=closeAddContactModal;
+document.getElementById("addContactScrim").onclick=(e)=>{ if(e.target.id==="addContactScrim") closeAddContactModal(); };
+function buildContactBody(){
+  const v=id=>document.getElementById(id).value.trim();
+  const lines=[
+    `New contact suggestion for the CRM`,
+    ``,
+    `Name: ${v("acFirst")} ${v("acLast")}`,
+    `Title: ${v("acTitle")}`,
+    `Company: ${v("acCompany")}`,
+    `Email: ${v("acEmail")}`,
+  ];
+  if(acSelectedType) lines.push(`Suggested type: ${acSelectedType}`);
+  if(v("acLinkedin")) lines.push(`LinkedIn: ${v("acLinkedin")}`);
+  if(v("acLocation")) lines.push(`Location: ${v("acLocation")}`);
+  if(v("acPhone")) lines.push(`Phone: ${v("acPhone")}`);
+  if(v("acNotes")) lines.push(``,`Context:`,v("acNotes"));
+  lines.push(``,`— — — — — — — — — —`,`Submitted via the London Priority Contacts dashboard. Nothing added to the CRM automatically.`);
+  return lines.join("\n");
+}
+document.getElementById("acSend").onclick=()=>{
+  const missing=AC_FIELDS.filter(id=>!document.getElementById(id).value.trim());
+  if(missing.length){ toast("Please fill in all required fields"); return; }
+  const email=document.getElementById("acEmail").value.trim();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ toast("Enter a valid email address"); return; }
+  const first=document.getElementById("acFirst").value.trim();
+  const last=document.getElementById("acLast").value.trim();
+  const company=document.getElementById("acCompany").value.trim();
+  const subject=`New contact suggestion — ${first} ${last} (${company})`;
+  window.location.href=`mailto:${OWNER_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(buildContactBody())}`;
+  closeAddContactModal();
+};
+
+// ---------- theme ----------
+const themeBtn=document.getElementById("themeBtn");
+function setTheme(t){
+  document.documentElement.setAttribute("data-theme",t);
+  themeBtn.textContent = t==="light"?"Dark mode":"Light mode";
+  try{ localStorage.setItem("pc_theme",t); }catch(e){}
+  render();
+}
+themeBtn.onclick=()=>{ setTheme(document.documentElement.getAttribute("data-theme")==="light"?"dark":"light"); };
+try{ const s=localStorage.getItem("pc_theme"); if(s){ document.documentElement.setAttribute("data-theme",s); themeBtn.textContent=(s==="light")?"Dark mode":"Light mode"; } }catch(e){}
+
+document.getElementById("search").addEventListener("input",e=>{ query=e.target.value; render(); });
+(function(){ const d=new Date(LAST_UPDATED); document.getElementById("updated").textContent="Updated "+d.toLocaleString("en-GB",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}); })();
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeModal(); closeAddContactModal(); } });
+
+buildTabs();
+render();
+</script>
+</body>
+</html>
